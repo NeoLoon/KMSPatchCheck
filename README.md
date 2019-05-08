@@ -9,6 +9,6 @@ First, you have to put your discord bot's token into a script file(can be found 
 
 Second, Change all the ###Channel ID###s with the channel ID or it will crash.
 
-Install discord.py if you didn't already.
+If you haven't already, install discord.py.
 
 Lastly, Run by using "python bot.py" or "python3 bot.py if you have python2 installed on your OS.
