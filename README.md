@@ -2,8 +2,8 @@
 A Discord bot that can check KMS/KMS minor/KMST patches
 # Dependencies
 - Python 3.5.3+ is needed(as the discord.py requires 3.5.3+).
-- Discord.py is needed for running with discord.
-- Should theoretically work with all OSs with those two.
+- Discord.py is needed for running this with discord.
+- This should theoretically work with all OSs.
 # Running
 First, you have to put your discord bot's token into a script file(can be found in discord site).
 
