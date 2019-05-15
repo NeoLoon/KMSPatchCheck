@@ -1,6 +1,6 @@
 ### Copyright (c) 2018 ~ 2019 Neo
 ### MIT License
-### Version 1.0 release
+### Version 1.0.1 release
 
 import discord
 import urllib.request
@@ -30,7 +30,7 @@ oldverT = newverT - 1
 print("Version check \nOld: ", oldver , "\nNew: ", newver,"\n\nOld KMST: ", oldverT, "\nNew KMST: ", newverT)
 
 @client.event
-async def kmscheck():
+async def kmscheck(down):
     global e, c, oldhash, newhash, newver, oldver
     while 1:
         urlsd = "http://maplestory.dn.nexoncdn.co.kr/Patch/00{}/00{}to00{}.patch".format(newver, oldver, newver)
@@ -48,6 +48,11 @@ async def kmscheck():
                 msg = "@everyone KMS ver 1.2.{} Patch is up!\n\nPatch Size is: {}MB\nDate uploaded: {}\nLink: {}".format(newver, size, datemod, urlsd)
             newver+=1
             await client.get_channel(###Channel ID ###).send(msg)
+            if down == 1:
+                filename = "00{}to00{}.patch".format(oldver, newver)
+                print("Downloading...")
+                urllib.request.urlretrieve(urlsd, filename)
+                print("Download Complete.")
             await asyncio.sleep(10)
             open('ver.txt', 'w').close()
             oldver+=1
@@ -70,7 +75,7 @@ async def kmscheck():
             await asyncio.sleep(50)
 
 @client.event
-async def kmsMcheck():
+async def kmsMcheck(down):
     global e, c, oldhash, newhash, newver, oldver
     urls = 'http://maplestory.dn.nexoncdn.co.kr/Patch/00{}/Version.info'.format(oldver)
     print("hello")
@@ -109,13 +114,18 @@ async def kmsMcheck():
             x = open("verM.txt", "w")
             x.write(str(ver) + "\n" + str(minor+1) + "\n")
             x.close()
+            if down == 1:
+                filename = "ExePatch.dat".format(oldver, newver)
+                print("Downloading...")
+                urllib.request.urlretrieve(urls, filename)
+                print("Download Complete.")
             print("Write Complete, Killing bot")
             await client.get_channel(###Channel ID ###).send(msg)
             return 0
         await asyncio.sleep(120)
 
 @client.event
-async def KMSTcheck():
+async def KMSTcheck(down):
     global e, c, oldhash, newhash, newverT, oldverT
     while 1:
         urls = "http://maplestory.dn.nexoncdn.co.kr/PatchT/0{}/0{}to0{}.patch".format(newverT, oldverT, newverT)
@@ -134,6 +144,11 @@ async def KMSTcheck():
             newverT+=1
             await client.get_channel(###Channel ID ###).send(msg)
             oldverT+=1
+            if down == 1:
+                filename = "00{}to00{}.patch".format(oldver, newver)
+                print("Downloading...")
+                urllib.request.urlretrieve(urls, filename)
+                print("Download Complete.")
             open('verT.txt', 'w').close()
             x = open("verT.txt", "w")
             x.write(str(newverT))
@@ -143,21 +158,60 @@ async def KMSTcheck():
             await asyncio.sleep(60)
 
 @client.event
-async def on_ready():
-    print('\nLogged in as')
-    print(client.user.name)
-    print(client.user.id)
-    print('------')
-    a = 0
+async def jmscheck(down):
+    f = open("verJMS.txt", "r")
+    newver = int(f.readline())
+    f.close()
+    oldver = newver - 1
     while 1:
-        a = int(input("\nChoose from these:\n1. KMS check\n2. KMS minor check\n3. KMST check\n Choice? : "))
+        urlsd = "http://webdown2.nexon.co.jp/maple/patch/patchdir/00{}/00{}to00{}.patch".format(newver, oldver, newver)
+        print(urlsd)
+        try:
+            urllib.request.urlopen(urlsd)
+            check = urllib.request.urlopen(urlsd)
+            mdata = int(check.info()['Content-Length']) #get metadata
+            datemod = check.info()['Last-Modified']
+            if mdata > 1073741824:
+                size = round(float((((int(mdata)/1024)/1024)/1024)),2) # B -> KB -> MB -> GB
+                msg = "@everyone JMS ver.{} Patch is up!\n\nPatch Size is: {}GB\nDate uploaded: {}\nLink: {}".format(newver, size, datemod, urlsd)
+            else:
+                size = round(float((int(mdata)/1024)/1024),2) # B -> KB -> MB
+                msg = "@everyone JMS ver.{} Patch is up!\n\nPatch Size is: {}MB\nDate uploaded: {}\nLink: {}".format(newver, size, datemod, urlsd)
+            newver+=1
+            await client.get_channel(###Channel ID ###).send(msg)
+            if down == 1:
+                filename = "00{}to00{}.patch".format(oldver, newver)
+                print("Downloading...")
+                urllib.request.urlretrieve(urlsd, filename)
+                print("Download Complete.")
+            await asyncio.sleep(10)
+            open('ver.txt', 'w').close()
+            oldver+=1
+            x = open("ver.txt", "w")
+            x.write(str(newver) + "\n")
+            print("Write Complete, Killing bot")
+            x.close()
+            return 0
+        except:
+            await asyncio.sleep(50)
+
+@client.event
+async def on_ready():
+    a = 0
+    enable = 0 #Patch download
+    while 1:
+        a = int(input("\nChoose from these:\n1. KMS check\n2. KMS minor check\n3. KMST check\n4. JMS check\n5. Enable Patch Download\nChoice? : "))
         try:
             if a == 1:
-                await kmscheck()
-            elif a == 2
-                await kmsMcheck()
-            else:
-                await KMSTcheck()
+                await kmscheck(enable)
+            elif a == 2:
+                await kmsMcheck(enable)
+            elif a == 3:
+                await KMSTcheck(enable)
+            elif a == 4:
+                await jmscheck(enable)
+            elif a == 5:
+                enable = 1;
         except:
             exit()
 
