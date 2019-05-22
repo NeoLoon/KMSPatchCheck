@@ -1,6 +1,6 @@
 ### Copyright (c) 2018 - 2019 Neo
 ### MIT License
-### Version 1.0.2 stable release
+### Version 1.0.2-1 stable release
 
 import os
 import discord
@@ -54,6 +54,7 @@ async def kmscheck(down):
                         os.mkdir("./KMS")
                     except OSError:
                         print("Failed to create directory.")
+                        break
                     else:
                         print("Directory KMS has been created")
                 filename = "./KMS/00{}to00{}.patch".format(oldver, newver)
@@ -203,7 +204,6 @@ async def jmscheck(down):
                 msg = "@everyone JMS ver.{} Patch is up!\n\nPatch Size is: {}MB\nDate uploaded: {}\nLink: {}".format(newver, size, datemod, urlsd)
             await client.get_channel(###Channel ID ###).send(msg)
             if down == 1:
-                print(os.path.isdir("./JMS"))
                 if os.path.isdir("./JMS") == False:
                     try:
                         os.mkdir("./JMS")
