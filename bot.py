@@ -1,7 +1,8 @@
-### Copyright (c) 2018 ~ 2019 Neo
+### Copyright (c) 2018 - 2019 Neo
 ### MIT License
-### Version 1.0.1 release
+### Version 1.0.2 stable release
 
+import os
 import discord
 import urllib.request
 import asyncio
@@ -46,15 +47,21 @@ async def kmscheck(down):
             else:
                 size = round(float((int(mdata)/1024)/1024),2) # B -> KB -> MB
                 msg = "@everyone KMS ver 1.2.{} Patch is up!\n\nPatch Size is: {}MB\nDate uploaded: {}\nLink: {}".format(newver, size, datemod, urlsd)
-            newver+=1
             await client.get_channel(###Channel ID ###).send(msg)
             if down == 1:
-                filename = "00{}to00{}.patch".format(oldver, newver)
+                if os.path.isdir("./KMS") == False:
+                    try:
+                        os.mkdir("./KMS")
+                    except OSError:
+                        print("Failed to create directory.")
+                    else:
+                        print("Directory KMS has been created")
+                filename = "./KMS/00{}to00{}.patch".format(oldver, newver)
                 print("Downloading...")
                 urllib.request.urlretrieve(urlsd, filename)
-                print("Download Complete.")
-            await asyncio.sleep(10)
+                print("Download Complete. (saved to ./KMS folder)")
             open('ver.txt', 'w').close()
+            newver+=1
             oldver+=1
             x = open("ver.txt", "w")
             x.write(str(newver) + "\n")
@@ -72,7 +79,7 @@ async def kmscheck(down):
             x.close()
             return 0
         except:
-            await asyncio.sleep(50)
+            await asyncio.sleep(60)
 
 @client.event
 async def kmsMcheck(down):
@@ -115,10 +122,18 @@ async def kmsMcheck(down):
             x.write(str(ver) + "\n" + str(minor+1) + "\n")
             x.close()
             if down == 1:
-                filename = "ExePatch.dat".format(oldver, newver)
+                if os.path.isdir("./KMSM") == False:
+                    try:
+                        os.mkdir("./KMSM")
+                    except OSError:
+                        print("Failed to create directory.")
+                        break
+                    else:
+                        print("Directory KMSM has been created")
+                filename = "./KMSM/ExePatch.dat"
                 print("Downloading...")
                 urllib.request.urlretrieve(urls, filename)
-                print("Download Complete.")
+                print("Download Complete. (saved to ./KMSM folder)")
             print("Write Complete, Killing bot")
             await client.get_channel(###Channel ID ###).send(msg)
             return 0
@@ -141,14 +156,22 @@ async def KMSTcheck(down):
             else:
                 size = round(float((int(mdata)/1024)/1024),2) # B -> KB -> MB
                 msg = "@everyone KMST ver 1.2.0{} Patch is up!\n\nPatch Size is: {}MB\nDate uploaded: {}\nLink: {}".format(int(newverT-1000),size, datemod, urls)
-            newverT+=1
             await client.get_channel(###Channel ID ###).send(msg)
-            oldverT+=1
             if down == 1:
-                filename = "00{}to00{}.patch".format(oldver, newver)
+                if os.path.isdir("./KMST") == False:
+                    try:
+                        os.mkdir("./KMST")
+                    except OSError:
+                        print("Failed to create directory.")
+                        break
+                    else:
+                        print("Directory KMST has been created")
+                filename = "./KMST/00{}to00{}.patch".format(oldverT, newverT)
                 print("Downloading...")
                 urllib.request.urlretrieve(urls, filename)
-                print("Download Complete.")
+                print("Download Complete. (saved to ./KMST folder)")
+            newverT+=1
+            oldverT+=1
             open('verT.txt', 'w').close()
             x = open("verT.txt", "w")
             x.write(str(newverT))
@@ -161,6 +184,7 @@ async def KMSTcheck(down):
 async def jmscheck(down):
     f = open("verJMS.txt", "r")
     newver = int(f.readline())
+    print("Detected version: {}".format(newver))
     f.close()
     oldver = newver - 1
     while 1:
@@ -177,30 +201,38 @@ async def jmscheck(down):
             else:
                 size = round(float((int(mdata)/1024)/1024),2) # B -> KB -> MB
                 msg = "@everyone JMS ver.{} Patch is up!\n\nPatch Size is: {}MB\nDate uploaded: {}\nLink: {}".format(newver, size, datemod, urlsd)
-            newver+=1
             await client.get_channel(###Channel ID ###).send(msg)
             if down == 1:
-                filename = "00{}to00{}.patch".format(oldver, newver)
+                print(os.path.isdir("./JMS"))
+                if os.path.isdir("./JMS") == False:
+                    try:
+                        os.mkdir("./JMS")
+                    except OSError:
+                        print("Failed to create directory.")
+                        break
+                    else:
+                        print("Directory JMS has been created")
+                filename = "./JMS/00{}to00{}.patch".format(oldver, newver)
                 print("Downloading...")
                 urllib.request.urlretrieve(urlsd, filename)
-                print("Download Complete.")
-            await asyncio.sleep(10)
-            open('ver.txt', 'w').close()
+                print("Download Complete. (saved to ./JMS folder)")
+            open('verJMS.txt', 'w').close()
+            newver+=1
             oldver+=1
-            x = open("ver.txt", "w")
+            x = open("verJMS.txt", "w")
             x.write(str(newver) + "\n")
             print("Write Complete, Killing bot")
             x.close()
             return 0
         except:
-            await asyncio.sleep(50)
+            await asyncio.sleep(120)
 
 @client.event
 async def on_ready():
     a = 0
     enable = 0 #Patch download
     while 1:
-        a = int(input("\nChoose from these:\n1. KMS check\n2. KMS minor check\n3. KMST check\n4. JMS check\n5. Enable Patch Download\nChoice? : "))
+        a = int(input("\nChoose from these:\n1. KMS check\n2. KMS minor check\n3. KMST check\n4. JMS check\n5. Enable Patch Download\n6. Quit\n\nChoice? : "))
         try:
             if a == 1:
                 await kmscheck(enable)
@@ -211,7 +243,14 @@ async def on_ready():
             elif a == 4:
                 await jmscheck(enable)
             elif a == 5:
-                enable = 1;
+                if enable == 0:
+                    enable = 1;
+                    print("Patch download has been enabled")
+                else:
+                    enable = 0;
+                    print("Patch download has been disabled")
+            elif a == 6:
+                exit()
         except:
             exit()
 
