@@ -1,6 +1,6 @@
 ### Copyright (c) 2018 - 2019 Neo
 ### MIT License
-### Version 1.0.2-1 stable release
+### Version 1.0.3 stable release
 
 import os
 import discord
@@ -99,7 +99,7 @@ async def kmsMcheck(down):
         f=open("Version.info","rb")
         data=f.read()
         f.close()
-        newhash = 1 #md5(data).hexdigest()
+        newhash = md5(data).hexdigest()
         if oldhash != newhash:
             f = open("verM.txt", "r")
             ver = int(f.readline()) #Read the version to compare to the
