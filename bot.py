@@ -11,8 +11,6 @@ from hashlib import md5
 TOKEN = '###DISCORD TOKEN###'
 
 client = discord.Client()
-e = 0
-c = 0
 oldhash = 0
 newhash = 0
 patchvoid = 0
@@ -32,12 +30,14 @@ print("Version check \nOld: ", oldver , "\nNew: ", newver,"\n\nOld KMST: ", oldv
 
 @client.event
 async def kmscheck(down):
-    global e, c, oldhash, newhash, newver, oldver
+    global oldhash, newhash, newver, oldver
+    urlsd = "http://maplestory.dn.nexoncdn.co.kr/Patch/00{}/00{}to00{}.patch".format(newver, oldver, newver)
+    print(urlsd)
+    print("Start checking for KMS patch...")
     while 1:
-        urlsd = "http://maplestory.dn.nexoncdn.co.kr/Patch/00{}/00{}to00{}.patch".format(newver, oldver, newver)
-        print(urlsd)
         try:
             urllib.request.urlopen(urlsd)
+            print("Patch found!")
             check = urllib.request.urlopen(urlsd)
             mdata = int(check.info()['Content-Length']) #get metadata
             datemod = check.info()['Last-Modified']
@@ -84,9 +84,11 @@ async def kmscheck(down):
 
 @client.event
 async def kmsMcheck(down):
-    global e, c, oldhash, newhash, newver, oldver
+    c = 0
+    global oldhash, newhash, newver, oldver
     urls = 'http://maplestory.dn.nexoncdn.co.kr/Patch/00{}/Version.info'.format(oldver)
-    print("hello")
+    print(urls)
+    print("Start checking for KMS minor patch...")
     while 1:
         urllib.request.urlretrieve(urls, filename='Version.info')
         if c == 0:
@@ -95,12 +97,12 @@ async def kmsMcheck(down):
             f.close()
             oldhash = md5(data).hexdigest()
             c += 1
-        urllib.request.urlretrieve(urls, filename='Version.info')
         f=open("Version.info","rb")
         data=f.read()
         f.close()
         newhash = md5(data).hexdigest()
         if oldhash != newhash:
+            print("Patch found!")
             f = open("verM.txt", "r")
             ver = int(f.readline()) #Read the version to compare to the
             minor = int(f.readline())
@@ -142,12 +144,14 @@ async def kmsMcheck(down):
 
 @client.event
 async def KMSTcheck(down):
-    global e, c, oldhash, newhash, newverT, oldverT
+    global oldhash, newhash, newverT, oldverT
+    urls = "http://maplestory.dn.nexoncdn.co.kr/PatchT/0{}/0{}to0{}.patch".format(newverT, oldverT, newverT)
+    print(urls)
+    print("Start checking for KMST patch...")
     while 1:
-        urls = "http://maplestory.dn.nexoncdn.co.kr/PatchT/0{}/0{}to0{}.patch".format(newverT, oldverT, newverT)
-        print(urls)
         try:
             urllib.request.urlopen(urls)
+            print("Patch found!")
             check = urllib.request.urlopen(urls)
             mdata = int(check.info()['Content-Length']) #get metadata
             datemod = check.info()['Last-Modified']
@@ -188,11 +192,13 @@ async def jmscheck(down):
     print("Detected version: {}".format(newver))
     f.close()
     oldver = newver - 1
+    urlsd = "http://webdown2.nexon.co.jp/maple/patch/patchdir/00{}/00{}to00{}.patch".format(newver, oldver, newver)
+    print(urls)
+    print("Start checking for JMS patch...")
     while 1:
-        urlsd = "http://webdown2.nexon.co.jp/maple/patch/patchdir/00{}/00{}to00{}.patch".format(newver, oldver, newver)
-        print(urlsd)
         try:
             urllib.request.urlopen(urlsd)
+            print("Patch found!")
             check = urllib.request.urlopen(urlsd)
             mdata = int(check.info()['Content-Length']) #get metadata
             datemod = check.info()['Last-Modified']
