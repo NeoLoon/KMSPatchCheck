@@ -1,6 +1,6 @@
 ### Copyright (c) 2018 - 2019 Neo
 ### MIT License
-### Version 1.0.6 stable release
+### Version 1.0.6-2 stable release
 
 import os
 import discord
@@ -211,9 +211,10 @@ async def jmscheck(down):
     newver = int(f.readline())
     print("Detected version: {}".format(newver))
     f.close()
+    
     oldver = newver - 1
     urlsd = "http://webdown2.nexon.co.jp/maple/patch/patchdir/00{}/00{}to00{}.patch".format(newver, oldver, newver)
-    print(urls)
+    print(urlsd)
     print("Start checking for JMS patch...")
     while 1:
         try:
