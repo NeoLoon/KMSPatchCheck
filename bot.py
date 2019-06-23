@@ -1,6 +1,6 @@
 ### Copyright (c) 2018 - 2019 Neo
 ### MIT License
-### Version 1.0.3 stable release
+### Version 1.0.6 stable release
 
 import os
 import discord
@@ -18,6 +18,7 @@ patchvoid = 0
 f = open("ver.txt", "r")
 newver = int(f.readline())
 prevsize = float(f.readline())
+minorsize = float(f.readline())
 f.close()
 oldver = newver - 1
 
@@ -40,6 +41,7 @@ async def kmscheck(down):
             print("Patch found!")
             check = urllib.request.urlopen(urlsd)
             mdata = int(check.info()['Content-Length']) #get metadata
+
             datemod = check.info()['Last-Modified']
             if mdata > 1073741824:
                 size = round(float((((int(mdata)/1024)/1024)/1024)),2) # B -> KB -> MB -> GB
@@ -47,7 +49,8 @@ async def kmscheck(down):
             else:
                 size = round(float((int(mdata)/1024)/1024),2) # B -> KB -> MB
                 msg = "@everyone KMS ver 1.2.{} Patch is up!\n\nPatch Size is: {}MB\nDate uploaded: {}\nLink: {}".format(newver, size, datemod, urlsd)
-            await client.get_channel(###Channel ID ###).send(msg)
+            await client.get_channel(###Channel ID###).send(msg)
+
             if down == 1:
                 if os.path.isdir("./KMS") == False:
                     try:
@@ -61,13 +64,21 @@ async def kmscheck(down):
                 print("Downloading...")
                 urllib.request.urlretrieve(urlsd, filename)
                 print("Download Complete. (saved to ./KMS folder)")
-            open('ver.txt', 'w').close()
+
             newver+=1
             oldver+=1
-            x = open("ver.txt", "w")
-            x.write(str(newver) + "\n")
             print("Waiting for 5 min...")
             await asyncio.sleep(300) #wait 5 min and write the ExePatch.dat size
+
+            open('verM.txt', 'w').close()
+            x = open("verM.txt", "w")
+            x.write(str(2) + "\n")
+            x.close()
+
+            open('ver.txt', 'w').close()
+            x = open("ver.txt", "w")
+            x.write(str(newver) + "\n")
+
             urls = 'http://maplestory.dn.nexoncdn.co.kr/Patch/00{}/ExePatch.dat'.format(oldver)
             check = urllib.request.urlopen(urls)
             mdata = int(check.info()['Content-Length']) #get metadata
@@ -75,55 +86,56 @@ async def kmscheck(down):
                 size = round(float((((int(mdata)/1024)/1024)/1024)),2) # B -> KB -> MB -> GB
             else:
                 size = round(float((int(mdata)/1024)/1024),2) # B -> KB -> MB
+
             x.write(str(size) + "\n")
+            x.write(str(mdata) + "\n")
             print("Write Complete, Killing bot")
             x.close()
+
             return 0
-        except:
-            await asyncio.sleep(60)
+        except(urllib.error.HTTPError):
+            print("File doesn't exist")
+            await asyncio.sleep(50)
+
+        except(AtrributeError):
+            print("You are getting this error because you are using 0.16.x version of async, please update to V.1.0+ to use this bot")
+            os._exit(1)
 
 @client.event
 async def kmsMcheck(down):
     c = 0
-    global oldhash, newhash, newver, oldver
-    urls = 'http://maplestory.dn.nexoncdn.co.kr/Patch/00{}/Version.info'.format(oldver)
-    print(urls)
+    global oldhash, newhash, newver, oldver, minorsize
+    urls = 'http://maplestory.dn.nexoncdn.co.kr/Patch/00{}/ExePatch.dat'.format(oldver)
     print("Start checking for KMS minor patch...")
     while 1:
-        urllib.request.urlretrieve(urls, filename='Version.info')
-        if c == 0:
-            f=open("Version.info","rb")
-            data=f.read()
-            f.close()
-            oldhash = md5(data).hexdigest()
-            c += 1
-        f=open("Version.info","rb")
-        data=f.read()
-        f.close()
-        newhash = md5(data).hexdigest()
-        if oldhash != newhash:
+        check = urllib.request.urlopen(urls)
+        mdata = int(check.info()['Content-Length'])
+        if mdata != minorsize:
             print("Patch found!")
+
             f = open("verM.txt", "r")
-            ver = int(f.readline()) #Read the version to compare to the
             minor = int(f.readline())
             f.close()
-            if ver != oldver:
-                ver = oldver
-                minor = 2
-            urls = 'http://maplestory.dn.nexoncdn.co.kr/Patch/00{}/ExePatch.dat'.format(ver)
-            check = urllib.request.urlopen(urls)
-            mdata = int(check.info()['Content-Length']) #get metadata
+
             datemod = check.info()['Last-Modified']
             size = round(float((int(mdata)/1024)/1024),2) # B -> KB -> MB
-            msg = "@everyone KMS ver 1.2.{}({}) Minor Patch is up!\n\nPatch Size is: {}MB\nLast MapleStory.exe size was: {}MB\n\nDate uploaded: {}".format(ver, minor, size, prevsize, datemod)
+            msg = "@everyone KMS ver 1.2.{}({}) Minor Patch is up!\n\nPatch Size is: {}MB\nLast MapleStory.exe size was: {}MB\n\nDate uploaded: {}".format(oldver, minor, size, prevsize, datemod)
+            try:
+                await client.get_channel(###Channel ID###).send(msg)
+            except(AttirbuteError):
+                print("You are getting this error because you are using 0.16.x version of async, please update to V.1.0+ to use this bot")
+                os._exit(1)
+
             open('ver.txt', 'w').close()
             x = open("ver.txt", "w")
-            x.write(str(newver) + "\n" + str(size) + "\n")
+            x.write(str(oldver) + "\n" + str(size) + "\n" + str(mdata) +"\n")
             x.close()
+
             open('verM.txt', 'w').close()
             x = open("verM.txt", "w")
-            x.write(str(ver) + "\n" + str(minor+1) + "\n")
+            x.write(str(minor+1) + "\n")
             x.close()
+
             if down == 1:
                 if os.path.isdir("./KMSM") == False:
                     try:
@@ -138,7 +150,6 @@ async def kmsMcheck(down):
                 urllib.request.urlretrieve(urls, filename)
                 print("Download Complete. (saved to ./KMSM folder)")
             print("Write Complete, Killing bot")
-            await client.get_channel(###Channel ID ###).send(msg)
             return 0
         await asyncio.sleep(120)
 
@@ -154,6 +165,7 @@ async def KMSTcheck(down):
             print("Patch found!")
             check = urllib.request.urlopen(urls)
             mdata = int(check.info()['Content-Length']) #get metadata
+
             datemod = check.info()['Last-Modified']
             if mdata > 1073741824:
                 size = round(float((((int(mdata)/1024)/1024)/1024)),2) # B -> KB -> MB -> GB
@@ -161,7 +173,8 @@ async def KMSTcheck(down):
             else:
                 size = round(float((int(mdata)/1024)/1024),2) # B -> KB -> MB
                 msg = "@everyone KMST ver 1.2.0{} Patch is up!\n\nPatch Size is: {}MB\nDate uploaded: {}\nLink: {}".format(int(newverT-1000),size, datemod, urls)
-            await client.get_channel(###Channel ID ###).send(msg)
+            await client.get_channel(###Channel ID###).send(msg)
+
             if down == 1:
                 if os.path.isdir("./KMST") == False:
                     try:
@@ -177,13 +190,20 @@ async def KMSTcheck(down):
                 print("Download Complete. (saved to ./KMST folder)")
             newverT+=1
             oldverT+=1
+
             open('verT.txt', 'w').close()
             x = open("verT.txt", "w")
             x.write(str(newverT))
             x.close()
-            return 0
-        except:
+
+            return 9
+        except(urllib.error.HTTPError):
+            print("File doesn't exist")
             await asyncio.sleep(60)
+
+        except(AtrributeError):
+            print("You are getting this error because you are using 0.16.x version of async, please update to V.1.0+ to use this bot")
+            os._exit(1)
 
 @client.event
 async def jmscheck(down):
@@ -202,13 +222,15 @@ async def jmscheck(down):
             check = urllib.request.urlopen(urlsd)
             mdata = int(check.info()['Content-Length']) #get metadata
             datemod = check.info()['Last-Modified']
+
             if mdata > 1073741824:
                 size = round(float((((int(mdata)/1024)/1024)/1024)),2) # B -> KB -> MB -> GB
                 msg = "@everyone JMS ver.{} Patch is up!\n\nPatch Size is: {}GB\nDate uploaded: {}\nLink: {}".format(newver, size, datemod, urlsd)
             else:
                 size = round(float((int(mdata)/1024)/1024),2) # B -> KB -> MB
                 msg = "@everyone JMS ver.{} Patch is up!\n\nPatch Size is: {}MB\nDate uploaded: {}\nLink: {}".format(newver, size, datemod, urlsd)
-            await client.get_channel(###Channel ID ###).send(msg)
+            await client.get_channel(###Channel ID###).send(msg)
+
             if down == 1:
                 if os.path.isdir("./JMS") == False:
                     try:
@@ -222,6 +244,7 @@ async def jmscheck(down):
                 print("Downloading...")
                 urllib.request.urlretrieve(urlsd, filename)
                 print("Download Complete. (saved to ./JMS folder)")
+
             open('verJMS.txt', 'w').close()
             newver+=1
             oldver+=1
@@ -229,9 +252,15 @@ async def jmscheck(down):
             x.write(str(newver) + "\n")
             print("Write Complete, Killing bot")
             x.close()
+
             return 0
-        except:
+        except(urllib.error.HTTPError):
+            print("File doesn't exist")
             await asyncio.sleep(120)
+
+        except(AtrributeError):
+            print("You are getting this error because you are using 0.16.x version of async, please update to V.1.0+ to use this bot")
+            os._exit(1)
 
 @client.event
 async def on_ready():
@@ -256,8 +285,8 @@ async def on_ready():
                     enable = 0;
                     print("Patch download has been disabled")
             elif a == 6:
-                exit()
+                os._exit(0)
         except:
-            exit()
+            os._exit(0)
 
 client.run(TOKEN)
