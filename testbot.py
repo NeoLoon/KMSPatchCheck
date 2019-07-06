@@ -296,9 +296,9 @@ async def ServerStatus():
     port = PORT
     try:
         while 1:
-            s.connect((test, port))
+            ping.connect((test, port))
             msg = b'ping'
-            s.send(msg)
+            ping.send(msg)
             data = ping.recv(1024)
             if data:
                 await asyncio.sleep(600)
