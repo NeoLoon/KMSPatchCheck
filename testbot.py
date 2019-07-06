@@ -1,10 +1,9 @@
 ### Copyright (c) 2018 - 2019 Neo
 ### MIT License
-### Version 1.0.8 beta release
+### Version 1.0.8 beta 2 release
 
 import os
-import platform
-import subprocess
+import socket
 import discord
 import urllib.request
 import asyncio
@@ -289,27 +288,28 @@ async def updateVer():
 
 @client.event
 async def ServerStatus():
-    # if they are down -> update check, sleep timer, etc. will come in the future
-    syscheck = platform.system()
-    # needs to find a Test-NetConnection replacement for python3
-    if syscheck != "Windows":
-        print("This feature is only avaliable to Windows Platform as of now")
-        return 1
-    m = "TcpTestSucceeded : True"
-    live = subprocess.getoutput(["powershell.exe", "Test-NetConnection INSERTIP -port INSERTPORT"])
-    if m in live:
-        msg = "UP"
-    else:
-        msg = "DOWN"
+    # if they are down -> update check, etc. will come in the future
     # test server needs different logic as patch files are up first (prob needs different function)
-    test = subprocess.getoutput(["powershell.exe", "Test-NetConnection INSERTIP -port INSERTPORT"])
-    if m in test:
-        msg1 = "UP"
-    else:
-        msg1 = "DOWN"
+    ping = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    live = 'IP'
+    test = 'IP'
+    port = PORT
     try:
-        await client.get_channel(###Channel ID###).send(msg)
-        await client.get_channel(###Channel ID###).send(msg1)
+        while 1:
+            s.connect((test, port))
+            msg = b'ping'
+            s.send(msg)
+            data = ping.recv(1024)
+            if data:
+                await asyncio.sleep(600)
+            else:
+                msg = "SERVER IS DOWN"
+                try:
+                    await client.get_channel(###CHANNEL ID###).send(msg)
+                except Exception as e:
+                    print(e)
+                #return 0 for beta
+                return 0
     except Exception as e:
         print(e)
     return 0
