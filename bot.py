@@ -1,6 +1,6 @@
 ### Copyright (c) 2018 - 2019 Neo
 ### MIT License
-### Version 1.0.6-2 stable release
+### Version 1.0.7 stable release
 
 import os
 import discord
@@ -70,12 +70,10 @@ async def kmscheck(down):
             print("Waiting for 5 min...")
             await asyncio.sleep(300) #wait 5 min and write the ExePatch.dat size
 
-            open('verM.txt', 'w').close()
             x = open("verM.txt", "w")
             x.write(str(2) + "\n")
             x.close()
 
-            open('ver.txt', 'w').close()
             x = open("ver.txt", "w")
             x.write(str(newver) + "\n")
 
@@ -99,6 +97,10 @@ async def kmscheck(down):
 
         except(AtrributeError):
             print("You are getting this error because you are using 0.16.x version of async, please update to V.1.0+ to use this bot")
+            os._exit(1)
+
+        except Exception as e:
+            print(e)
             os._exit(1)
 
 @client.event
@@ -126,12 +128,10 @@ async def kmsMcheck(down):
                 print("You are getting this error because you are using 0.16.x version of async, please update to V.1.0+ to use this bot")
                 os._exit(1)
 
-            open('ver.txt', 'w').close()
             x = open("ver.txt", "w")
             x.write(str(oldver) + "\n" + str(size) + "\n" + str(mdata) +"\n")
             x.close()
 
-            open('verM.txt', 'w').close()
             x = open("verM.txt", "w")
             x.write(str(minor+1) + "\n")
             x.close()
@@ -191,7 +191,6 @@ async def KMSTcheck(down):
             newverT+=1
             oldverT+=1
 
-            open('verT.txt', 'w').close()
             x = open("verT.txt", "w")
             x.write(str(newverT))
             x.close()
@@ -205,13 +204,17 @@ async def KMSTcheck(down):
             print("You are getting this error because you are using 0.16.x version of async, please update to V.1.0+ to use this bot")
             os._exit(1)
 
+        except Exception as e:
+            print(e)
+            os._exit(1)
+
 @client.event
 async def jmscheck(down):
     f = open("verJMS.txt", "r")
     newver = int(f.readline())
     print("Detected version: {}".format(newver))
     f.close()
-    
+
     oldver = newver - 1
     urlsd = "http://webdown2.nexon.co.jp/maple/patch/patchdir/00{}/00{}to00{}.patch".format(newver, oldver, newver)
     print(urlsd)
@@ -246,7 +249,6 @@ async def jmscheck(down):
                 urllib.request.urlretrieve(urlsd, filename)
                 print("Download Complete. (saved to ./JMS folder)")
 
-            open('verJMS.txt', 'w').close()
             newver+=1
             oldver+=1
             x = open("verJMS.txt", "w")
@@ -262,6 +264,26 @@ async def jmscheck(down):
         except(AtrributeError):
             print("You are getting this error because you are using 0.16.x version of async, please update to V.1.0+ to use this bot")
             os._exit(1)
+
+        except Exception as e:
+            print(e)
+            os._exit(1)
+
+@client.event
+async def updateVer():
+    global newver, prevsize, minorsize, oldver, newverT, oldverT
+    f = open("ver.txt", "r")
+    newver = int(f.readline())
+    prevsize = float(f.readline())
+    minorsize = float(f.readline())
+    f.close()
+    oldver = newver - 1
+
+    f = open("verT.txt", "r")
+    newverT = int(f.read())
+    f.close()
+    oldverT = newverT - 1
+    return 0
 
 @client.event
 async def on_ready():
@@ -287,6 +309,7 @@ async def on_ready():
                     print("Patch download has been disabled")
             elif a == 6:
                 os._exit(0)
+            await updateVer()
         except:
             os._exit(0)
 
