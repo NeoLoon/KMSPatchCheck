@@ -1,13 +1,12 @@
 ### Copyright (c) 2018 - 2019 Neo
 ### MIT License
-### Version 1.0.8 beta 2 release
+### Version 1.0.8 beta 3 release
 
 import os
 import socket
 import discord
 import urllib.request
 import asyncio
-from hashlib import md5
 
 TOKEN = '###DISCORD TOKEN###'
 
@@ -31,8 +30,10 @@ oldverT = newverT - 1
 print("Version check \nOld: ", oldver , "\nNew: ", newver,"\n\nOld KMST: ", oldverT, "\nNew KMST: ", newverT)
 
 @client.event
-async def kmscheck(down):
+async def kmscheck(down, check):
     global oldhash, newhash, newver, oldver
+    if check == 0:
+        ServerStatus(1)
     urlsd = "http://maplestory.dn.nexoncdn.co.kr/Patch/00{}/00{}to00{}.patch".format(newver, oldver, newver)
     print(urlsd)
     print("Start checking for KMS patch...")
@@ -105,9 +106,11 @@ async def kmscheck(down):
             os._exit(1)
 
 @client.event
-async def kmsMcheck(down):
+async def kmsMcheck(down, check):
     c = 0
     global oldhash, newhash, newver, oldver, minorsize
+    if check == 0:
+        ServerStatus(1)
     urls = 'http://maplestory.dn.nexoncdn.co.kr/Patch/00{}/ExePatch.dat'.format(oldver)
     print("Start checking for KMS minor patch...")
     while 1:
@@ -196,7 +199,9 @@ async def KMSTcheck(down):
             x.write(str(newverT))
             x.close()
 
-            return 9
+            ServerStatus(2)
+
+            return 0
         except(urllib.error.HTTPError):
             print("File doesn't exist")
             await asyncio.sleep(60)
@@ -287,16 +292,15 @@ async def updateVer():
     return 0
 
 @client.event
-async def ServerStatus():
-    # if they are down -> update check, etc. will come in the future
-    # test server needs different logic as patch files are up first (prob needs different function)
+async def ServerStatus(x):
+    # 1 stands for live and 2 stands for tespia
     ping = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     live = 'IP'
     test = 'IP'
     port = PORT
     try:
-        while 1:
-            ping.connect((test, port))
+        while x == 1:
+            ping.connect((live, port))
             msg = b'ping'
             ping.send(msg)
             data = ping.recv(1024)
@@ -308,7 +312,20 @@ async def ServerStatus():
                     await client.get_channel(###CHANNEL ID###).send(msg)
                 except Exception as e:
                     print(e)
-                #return 0 for beta
+                return 0
+        while x == 2:
+            ping.connect((test, port))
+            msg = b'ping'
+            ping.send(msg)
+            data = ping.recv(1024)
+            if data:
+                msg = "SERVER IS UP."
+                try:
+                    await client.get_channel(###CHANNEL ID###).send(msg)
+                except Exception as e:
+                    print(e)
+            else:
+                await asyncio.sleep(600)
                 return 0
     except Exception as e:
         print(e)
@@ -317,14 +334,15 @@ async def ServerStatus():
 @client.event
 async def on_ready():
     a = 0
+    check = 0 #ServerStatus
     enable = 0 #Patch download
     while 1:
-        a = int(input("\nChoose from these:\n1. KMS check\n2. KMS minor check\n3. KMST check\n4. JMS check\n5. Enable Patch Download\n6. Quit\n7. Server Check(BETA)\n\nChoice? : "))
+        a = int(input("\nChoose from these:\n1. KMS check\n2. KMS minor check\n3. KMST check\n4. JMS check\n5. Enable Patch Download\n6. Skip Server Status check for KMS\n7. Quit\n\nChoice? : "))
         try:
             if a == 1:
-                await kmscheck(enable)
+                await kmscheck(enable, check)
             elif a == 2:
-                await kmsMcheck(enable)
+                await kmsMcheck(enable, check)
             elif a == 3:
                 await KMSTcheck(enable)
             elif a == 4:
@@ -337,11 +355,15 @@ async def on_ready():
                     enable = 0;
                     print("Patch download has been disabled")
             elif a == 6:
-                os._exit(0)
+                if check == 0:
+                    check = 1;
+                    print("OK, server status check will be skipped")
+                else:
+                    check = 0;
+                    print("OK, server status will be checked")
             elif a == 7:
-                await ServerStatus()
-            await updateVer()
+                os._exit(0)
         except:
-            os._exit(0)
+            os._exit(1)
 
 client.run(TOKEN)
