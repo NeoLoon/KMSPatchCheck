@@ -33,7 +33,7 @@ print("Version check \nOld: ", oldver , "\nNew: ", newver,"\n\nOld KMST: ", oldv
 async def kmscheck(down, check):
     global oldhash, newhash, newver, oldver
     if check == 0:
-        ServerStatus(1)
+        await ServerStatus(1)
     urlsd = "http://maplestory.dn.nexoncdn.co.kr/Patch/00{}/00{}to00{}.patch".format(newver, oldver, newver)
     print(urlsd)
     print("Start checking for KMS patch...")
@@ -110,7 +110,7 @@ async def kmsMcheck(down, check):
     c = 0
     global oldhash, newhash, newver, oldver, minorsize
     if check == 0:
-        ServerStatus(1)
+        await ServerStatus(1)
     urls = 'http://maplestory.dn.nexoncdn.co.kr/Patch/00{}/ExePatch.dat'.format(oldver)
     print("Start checking for KMS minor patch...")
     while 1:
@@ -199,7 +199,7 @@ async def KMSTcheck(down):
             x.write(str(newverT))
             x.close()
 
-            ServerStatus(2)
+            await ServerStatus(2)
 
             return 0
         except(urllib.error.HTTPError):
@@ -295,39 +295,40 @@ async def updateVer():
 async def ServerStatus(x):
     # 1 stands for live and 2 stands for tespia
     ping = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    live = 'IP'
-    test = 'IP'
-    port = PORT
+
+    if x == 1:
+        ip = 'IP' #Live Server IP
+    elif x == 2:
+        ip = 'IP' #Tespia Server IP
+    port = PORT #Server Port
+
     try:
-        while x == 1:
-            ping.connect((live, port))
+        while 1:
+            ping.connect((ip, port))
             msg = b'ping'
             ping.send(msg)
             data = ping.recv(1024)
-            if data:
-                await asyncio.sleep(600)
+
+            if data: #Check if packet is empty
+                msg = "SERVER IS UP"
+                if x == 1: #Live server check will sleep for 300s
+                    await asynio.sleep(300)
+                else:
+                    break #End the ping loop and send msg
             else:
                 msg = "SERVER IS DOWN"
-                try:
-                    await client.get_channel(###CHANNEL ID###).send(msg)
-                except Exception as e:
-                    print(e)
-                return 0
-        while x == 2:
-            ping.connect((test, port))
-            msg = b'ping'
-            ping.send(msg)
-            data = ping.recv(1024)
-            if data:
-                msg = "SERVER IS UP."
-                try:
-                    await client.get_channel(###CHANNEL ID###).send(msg)
-                except Exception as e:
-                    print(e)
-            else:
-                await asyncio.sleep(600)
-                return 0
+                if x == 2: #tespia server check will sleep for 150s
+                    await asynio.sleep(150)
+                else:
+                    break
+        try:
+            await client.get_channel(###CHANNEL ID###).send(msg)
+            return 0
+        except Exception as e:
+            print(e)
+
     except Exception as e:
+        #TIMEOUT behaviors needs to be monitored for now.
         print(e)
     return 0
 
@@ -363,6 +364,8 @@ async def on_ready():
                     print("OK, server status will be checked")
             elif a == 7:
                 os._exit(0)
+            elif a == 8:
+                await ServerStatus(2)
         except:
             os._exit(1)
 
