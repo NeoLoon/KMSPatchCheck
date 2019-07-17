@@ -1,6 +1,6 @@
 ### Copyright (c) 2018 - 2019 Neo
 ### MIT License
-### Version 1.0.8 beta 3 release
+### Version 1.0.8 beta 4 release
 
 import os
 import socket
@@ -312,13 +312,13 @@ async def ServerStatus(x):
             if data: #Check if packet is empty
                 msg = "SERVER IS UP"
                 if x == 1: #Live server check will sleep for 300s
-                    await asynio.sleep(300)
+                    await asyncio.sleep(300)
                 else:
                     break #End the ping loop and send msg
             else:
                 msg = "SERVER IS DOWN"
                 if x == 2: #tespia server check will sleep for 150s
-                    await asynio.sleep(150)
+                    await asyncio.sleep(150)
                 else:
                     break
         try:
