@@ -1,18 +1,16 @@
 ### Copyright (c) 2018 - 2019 Neo
 ### MIT License
-### Version 1.0.7 stable release
+### Version 1.0.8 stable release
 
 import os
+import socket
 import discord
 import urllib.request
 import asyncio
-from hashlib import md5
 
 TOKEN = '###DISCORD TOKEN###'
 
 client = discord.Client()
-oldhash = 0
-newhash = 0
 patchvoid = 0
 
 f = open("ver.txt", "r")
@@ -30,9 +28,11 @@ oldverT = newverT - 1
 print("Version check \nOld: ", oldver , "\nNew: ", newver,"\n\nOld KMST: ", oldverT, "\nNew KMST: ", newverT)
 
 @client.event
-async def kmscheck(down):
-    global oldhash, newhash, newver, oldver
+async def kmscheck(down, check):
+    global newver, oldver
     urlsd = "http://maplestory.dn.nexoncdn.co.kr/Patch/00{}/00{}to00{}.patch".format(newver, oldver, newver)
+    if check == 0:
+        await ServerStatus(1)
     print(urlsd)
     print("Start checking for KMS patch...")
     while 1:
@@ -96,7 +96,7 @@ async def kmscheck(down):
             await asyncio.sleep(50)
 
         except(AtrributeError):
-            print("You are getting this error because you are using 0.16.x version of async, please update to V.1.0+ to use this bot")
+            print("You are getting this error because you are using 0.16.x version of async, please update it to V.1.0+ to use this bot")
             os._exit(1)
 
         except Exception as e:
@@ -104,10 +104,11 @@ async def kmscheck(down):
             os._exit(1)
 
 @client.event
-async def kmsMcheck(down):
-    c = 0
-    global oldhash, newhash, newver, oldver, minorsize
+async def kmsMcheck(down, check):
+    global newver, oldver, minorsize
     urls = 'http://maplestory.dn.nexoncdn.co.kr/Patch/00{}/ExePatch.dat'.format(oldver)
+    if check == 0:
+        await ServerStatus(1)
     print("Start checking for KMS minor patch...")
     while 1:
         check = urllib.request.urlopen(urls)
@@ -125,7 +126,7 @@ async def kmsMcheck(down):
             try:
                 await client.get_channel(###Channel ID###).send(msg)
             except(AttirbuteError):
-                print("You are getting this error because you are using 0.16.x version of async, please update to V.1.0+ to use this bot")
+                print("You are getting this error because you are using 0.16.x version of async, please update it to V.1.0+ to use this bot")
                 os._exit(1)
 
             x = open("ver.txt", "w")
@@ -155,7 +156,7 @@ async def kmsMcheck(down):
 
 @client.event
 async def KMSTcheck(down):
-    global oldhash, newhash, newverT, oldverT
+    global newverT, oldverT
     urls = "http://maplestory.dn.nexoncdn.co.kr/PatchT/0{}/0{}to0{}.patch".format(newverT, oldverT, newverT)
     print(urls)
     print("Start checking for KMST patch...")
@@ -195,13 +196,16 @@ async def KMSTcheck(down):
             x.write(str(newverT))
             x.close()
 
-            return 9
+            print("Checking for server...")
+            await ServerStatus(2)
+
+            return 0
         except(urllib.error.HTTPError):
             print("File doesn't exist")
             await asyncio.sleep(60)
 
         except(AtrributeError):
-            print("You are getting this error because you are using 0.16.x version of async, please update to V.1.0+ to use this bot")
+            print("You are getting this error because you are using 0.16.x version of async, please update it to V.1.0+ to use this bot")
             os._exit(1)
 
         except Exception as e:
@@ -262,7 +266,7 @@ async def jmscheck(down):
             await asyncio.sleep(120)
 
         except(AtrributeError):
-            print("You are getting this error because you are using 0.16.x version of async, please update to V.1.0+ to use this bot")
+            print("You are getting this error because you are using 0.16.x version of async, please update it to V.1.0+ to use this bot")
             os._exit(1)
 
         except Exception as e:
@@ -286,16 +290,72 @@ async def updateVer():
     return 0
 
 @client.event
+async def ServerStatus(x):
+    # 1 stands for live and 2 stands for test
+
+    a = 0
+    if x == 1:
+        ip = 'IP ADDRESS' #Live Server IP
+    elif x == 2:
+        ip = 'IP ADDRESS' #Test Server IP
+    port = PORT #Server Port
+
+    try:
+        while 1:
+            print("check {}".format(a))
+            a += 1
+            ping = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            ping.settimeout(15) #timeout is manually set to 15 sec.
+            try:
+                ping.connect((ip, port))
+                msg = b'ping'
+                ping.send(msg)
+                data = ping.recv(1024)
+                ping.close()
+            except Exception as e:
+                if x == 1:
+                    raise Exception
+                else:
+                    data = ''
+                    ping.close()
+
+            if data: #Check if packet is empty
+                if x != 1:
+                    msg = "Test server is up"
+                    try:
+                        await client.get_channel(###Channel ID###).send(msg)
+                        return 0
+                    except(AttirbuteError):
+                        print("You are getting this error because you are using 0.16.x version of async, please update it to V.1.0+ to use this bot")
+                    except Exception as e:
+                        print(e)
+                    break #End the ping loop and return
+            await asyncio.sleep(30)
+    except Exception as e:
+        ping.close()
+        msg = "live server is down, starting patch check"
+        try:
+            await client.get_channel(###Channel ID###).send(msg)
+            return 0
+        except(AttirbuteError):
+            print("You are getting this error because you are using 0.16.x version of async, please update it to V.1.0+ to use this bot")
+        except Exception as e:
+            print(e)
+        return 0
+    return 0
+
+@client.event
 async def on_ready():
     a = 0
+    check = 0 #ServerStatus
     enable = 0 #Patch download
     while 1:
-        a = int(input("\nChoose from these:\n1. KMS check\n2. KMS minor check\n3. KMST check\n4. JMS check\n5. Enable Patch Download\n6. Quit\n\nChoice? : "))
+        a = int(input("\nChoose from these:\n1. KMS check\n2. KMS minor check\n3. KMST check\n4. JMS check\n5. Enable Patch Download\n6. Skip Server Status check for KMS\n7. Quit\n\nChoice? : "))
         try:
             if a == 1:
-                await kmscheck(enable)
+                await kmscheck(enable, check)
             elif a == 2:
-                await kmsMcheck(enable)
+                await kmsMcheck(enable, check)
             elif a == 3:
                 await KMSTcheck(enable)
             elif a == 4:
@@ -308,6 +368,13 @@ async def on_ready():
                     enable = 0;
                     print("Patch download has been disabled")
             elif a == 6:
+                if check == 0:
+                    check = 1;
+                    print("OK, server status check will be skipped")
+                else:
+                    check = 0;
+                    print("OK, server status will be checked")
+            elif a == 7:
                 os._exit(0)
             await updateVer()
         except:
