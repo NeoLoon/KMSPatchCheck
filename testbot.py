@@ -1,6 +1,6 @@
 ### Copyright (c) 2018 - 2019 Neo
 ### MIT License
-### Version 1.0.9 beta release
+### Version 1.0.9 beta 2 release
 
 import os
 import socket
@@ -20,6 +20,7 @@ TOKEN = '###DISCORD TOKEN###'
 
 client = discord.Client()
 patchvoid = 0
+kms_choice = 0
 
 f = open("ver.txt", "r")
 newver = int(f.readline())
@@ -37,8 +38,11 @@ print("Version check \nOld: ", oldver , "\nNew: ", newver,"\n\nOld KMST: ", oldv
 
 @client.event
 async def timecheck():
+    global kms_choice
     client = zeep.Client('http://api.maplestory.nexon.com/soap/maplestory.asmx?WSDL') #Get WSDL
-    maintime = client.service.GetInspectionInfo()._value_1._value_1[0]["InspectionInfo"].startDateTime #Get Time from patch
+    info = client.service.GetInspectionInfo()._value_1._value_1[0]["InspectionInfo"]
+    maintime = info.startDateTime #Get Time from patch
+    detail = info.strObstacleContents #Get the name of the patch
     patch_m = int(maintime.strftime("%m")) #Get Month
     patch_d = int(maintime.strftime("%d")) #Get day
     patch_h = int(maintime.strftime("%H")) #Get hour
@@ -51,6 +55,22 @@ async def timecheck():
     hour = int(kst_time.strftime("%H")) #get current hour
     print('{} {} {}'.format(month, day, hour)) #Print for beta
 
+    #GET PATCH INFO
+    if ("점검") in detail:
+        print("Not a patch, maintenance. Waiting for 12 hours")
+        await asyncio.sleep(43200) #need more information to handle this
+        await timecheck()
+    elif ("마이너") in detail:
+        print("Minor patch will be checked")
+        kms_choice = 2
+    elif ("클라이언트 패치") in detail:
+        print("Client patch will be checked")
+        kms_choice = 1
+    else:
+        print(detail)
+        print("Unable to get the patch info, you can report this to https://github.com/NeoLoon/KMSPatchCheck/issues")
+        print("If this issue persists please skip this by using Option 7")
+
     sleep = 0
     try:
         if month < patch_m:
@@ -61,7 +81,7 @@ async def timecheck():
                 sleep = ((30 - day) + patch_d - 1) * 86400 #31 and 30 fix is coming later
             await asyncio.sleep(sleep)
             await timecheck()
-        elif (day < patch_d) & ((hour - patch_h) > 0):
+        elif (day < patch_d) & ((hour - patch_h) > 0) or :
             print("Day is different")
             await asyncio.sleep(86400)
             await timecheck()
@@ -73,7 +93,7 @@ async def timecheck():
     except Exception as e:
         print(e)
 
-    print("You already passed the date that was provided by API, skipping")
+    print("You already passed the date that was given by API, skipping")
     return 0 #server is up
 
 @client.event
@@ -394,40 +414,43 @@ async def ServerStatus(x):
 
 @client.event
 async def on_ready():
+    global kms_choice
     a = 0
     check = 0 #ServerStatus
     enable = 0 #Patch download
     while 1:
-        a = int(input("\nChoose from these:\n1. KMS check\n2. KMS minor check\n3. KMST check\n4. JMS check\n5. Enable/Disable Patch Download\n6. Skip Server Status check for KMS\n7. Quit\n8. Enable/Disable SOAP time check\n\nChoice? : "))
+        a = int(input("\nChoose from these:\n1. KMS/KMS minor check\n2. KMST check\n3. JMS check\n4. Enable/Disable Patch Download\n5. Skip Server Status check for KMS\n6. Quit\n7. Enable/Disable SOAP time check\n\nChoice? : "))
         try:
             if a == 1:
                 if ze == 1:
                     await timecheck()
-                print("return check")
-                await kmscheck(enable, check)
+                else:
+                    kms_choice = int(input("Which one do you want to check?:\n1. KMS\n2. KMS minor"))
+                if kms_choice == 1:
+                    await kmscheck(enable, check)
+                elif kmst_choice == 2:
+                     await kmsMcheck(enable, check)
             elif a == 2:
-                await kmsMcheck(enable, check)
-            elif a == 3:
                 await KMSTcheck(enable)
-            elif a == 4:
+            elif a == 3:
                 await jmscheck(enable)
-            elif a == 5:
+            elif a == 4:
                 if enable == 0:
                     enable = 1;
                     print("Patch download has been enabled")
                 else:
                     enable = 0;
                     print("Patch download has been disabled")
-            elif a == 6:
+            elif a == 5:
                 if check == 0:
                     check = 1;
                     print("OK, server status check will be skipped")
                 else:
                     check = 0;
                     print("OK, server status will be checked")
-            elif a == 7:
+            elif a == 6:
                 os._exit(0)
-            elif a == 8:
+            elif a == 7:
                 if ze == 1:
                     ze = 0
                     print("SOAP check has been disabled")
