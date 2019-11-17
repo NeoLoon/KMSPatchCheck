@@ -1,35 +1,106 @@
 ### Copyright (c) 2018 - 2019 Neo
 ### MIT License
-### Version 1.0.8 stable release
+### Version 1.0.9 stable release
 
 import os
 import socket
 import discord
 import urllib.request
 import asyncio
+import fileinput
+try:
+    ze = 1 #zeep check
+    import zeep
+    import pytz
+    import datetime
+except:
+    ze = 0 #doesn't exist
+    print("Either zeep, pytz or datetime is not installed, KMS check will run with a traditional method.")
 
-TOKEN = '###DISCORD TOKEN###'
+TOKEN = '###DISCORD ID###'
 
 client = discord.Client()
 patchvoid = 0
+kms_choice = 0
+minorver = 0
 
 f = open("ver.txt", "r")
 newver = int(f.readline())
 prevsize = float(f.readline())
 minorsize = float(f.readline())
+newverT = int(f.readline())
+jmsver = int(f.readline())
 f.close()
 oldver = newver - 1
-
-f = open("verT.txt", "r")
-newverT = int(f.read())
-f.close()
 oldverT = newverT - 1
 
 print("Version check \nOld: ", oldver , "\nNew: ", newver,"\n\nOld KMST: ", oldverT, "\nNew KMST: ", newverT)
 
 @client.event
+async def timecheck():
+    global kms_choice, minorver
+    client = zeep.Client('http://api.maplestory.nexon.com/soap/maplestory.asmx?WSDL') #Get WSDL
+    info = client.service.GetInspectionInfo()._value_1._value_1[0]["InspectionInfo"]
+    maintime = info.startDateTime #Get Time from patch
+    detail = info.strObstacleContents #Get the name of the patch
+
+    #GET PATCH INFO
+    if ("점검") in detail:
+        print("Not a patch, maintenance. Waiting for 12 hours")
+        await asyncio.sleep(43200) #need more information to handle this
+        await timecheck()
+    elif ("마이너") in detail:
+        print("Minor patch will be checked")
+        result = detail.find("마이너버전")
+        y = detail[result+5: result+9]
+        minorver = ''.join(x for x in y if x.isdigit())
+        kms_choice = 2
+    elif ("클라이언트 패치") in detail:
+        print("Client patch will be checked")
+        kms_choice = 1
+    else:
+        print(detail)
+        print("Unable to get the patch info, you can report this to https://github.com/NeoLoon/KMSPatchCheck/issues")
+        print("If this issue persists please skip this by using Option 7")
+
+    patch_m = int(maintime.strftime("%m")) #Get patch month
+    patch_d = int(maintime.strftime("%d")) #Get patch day
+    patch_h = int(maintime.strftime("%H")) #Get patch hour
+
+    kst = pytz.timezone('Asia/Seoul') #set timezone
+    kst_time = datetime.datetime.now(tz=kst)
+    month = int(kst_time.strftime("%m")) #get current month
+    day = int(kst_time.strftime("%d")) #get current day
+    hour = int(kst_time.strftime("%H")) #get current hour
+
+    sleep = 0
+    try:
+        if month < patch_m:
+            print("Month is different")
+            if month == 2:
+                sleep = ((28 - day) + patch_d - 1) * 86400
+            else:
+                sleep = ((30 - day) + patch_d - 1) * 86400 #31 and 30 fix is coming later
+            await asyncio.sleep(sleep)
+            await timecheck()
+        elif (day < patch_d) and ((hour - patch_h) > 0):
+            print("Day is different")
+            await asyncio.sleep(86400)
+            await timecheck()
+        elif hour < patch_h:
+            print("You still have 1+ hour until patch")
+            h = patch_h - hour
+            await asynic.sleep(3600*(h-1))
+            return 0
+    except Exception as e:
+        print(e)
+
+    print("You already passed the date that was given by API, skipping")
+    return 0 #server is up
+
+@client.event
 async def kmscheck(down, check):
-    global newver, oldver
+    global newver, oldver, minorsize, prevsize
     urlsd = "http://maplestory.dn.nexoncdn.co.kr/Patch/00{}/00{}to00{}.patch".format(newver, oldver, newver)
     if check == 0:
         await ServerStatus(1)
@@ -65,17 +136,8 @@ async def kmscheck(down, check):
                 urllib.request.urlretrieve(urlsd, filename)
                 print("Download Complete. (saved to ./KMS folder)")
 
-            newver+=1
-            oldver+=1
             print("Waiting for 5 min...")
             await asyncio.sleep(300) #wait 5 min and write the ExePatch.dat size
-
-            x = open("verM.txt", "w")
-            x.write(str(2) + "\n")
-            x.close()
-
-            x = open("ver.txt", "w")
-            x.write(str(newver) + "\n")
 
             urls = 'http://maplestory.dn.nexoncdn.co.kr/Patch/00{}/ExePatch.dat'.format(oldver)
             check = urllib.request.urlopen(urls)
@@ -85,11 +147,12 @@ async def kmscheck(down, check):
             else:
                 size = round(float((int(mdata)/1024)/1024),2) # B -> KB -> MB
 
-            x.write(str(size) + "\n")
-            x.write(str(mdata) + "\n")
-            print("Write Complete, Killing bot")
-            x.close()
+            for line in fileinput.input('ver.txt', inplace=True):
+                print(line.rstrip().replace(newver, str(newver+1)))
+                print(line.rstrip().replace(prevsize, str(size)))
+                print(line.rstrip().replace(minorsize, str(mdata)))
 
+            print("Write Complete, Killing bot")
             return 0
         except(urllib.error.HTTPError):
             print("File doesn't exist")
@@ -105,7 +168,7 @@ async def kmscheck(down, check):
 
 @client.event
 async def kmsMcheck(down, check):
-    global newver, oldver, minorsize
+    global newver, oldver, minorsize, minorver
     urls = 'http://maplestory.dn.nexoncdn.co.kr/Patch/00{}/ExePatch.dat'.format(oldver)
     if check == 0:
         await ServerStatus(1)
@@ -116,26 +179,17 @@ async def kmsMcheck(down, check):
         if mdata != minorsize:
             print("Patch found!")
 
-            f = open("verM.txt", "r")
-            minor = int(f.readline())
-            f.close()
-
             datemod = check.info()['Last-Modified']
             size = round(float((int(mdata)/1024)/1024),2) # B -> KB -> MB
-            msg = "@everyone KMS ver 1.2.{}({}) Minor Patch is up!\n\nPatch Size is: {}MB\nLast MapleStory.exe size was: {}MB\n\nDate uploaded: {}".format(oldver, minor, size, prevsize, datemod)
+            msg = "@everyone KMS ver 1.2.{}({}) Minor Patch is up!\n\nPatch Size is: {}MB\nLast MapleStory.exe size was: {}MB\n\nDate uploaded: {}".format(oldver, minorver, size, prevsize, datemod)
             try:
                 await client.get_channel(###Channel ID###).send(msg)
             except(AttirbuteError):
                 print("You are getting this error because you are using 0.16.x version of async, please update it to V.1.0+ to use this bot")
                 os._exit(1)
 
-            x = open("ver.txt", "w")
-            x.write(str(oldver) + "\n" + str(size) + "\n" + str(mdata) +"\n")
-            x.close()
-
-            x = open("verM.txt", "w")
-            x.write(str(minor+1) + "\n")
-            x.close()
+            for line in fileinput.input('ver.txt', inplace=True):
+                print(line.rstrip().replace(minorsize, str(size)))
 
             if down == 1:
                 if os.path.isdir("./KMSM") == False:
@@ -189,12 +243,9 @@ async def KMSTcheck(down):
                 print("Downloading...")
                 urllib.request.urlretrieve(urls, filename)
                 print("Download Complete. (saved to ./KMST folder)")
-            newverT+=1
-            oldverT+=1
 
-            x = open("verT.txt", "w")
-            x.write(str(newverT))
-            x.close()
+            for line in fileinput.input('ver.txt', inplace=True):
+                print(line.rstrip().replace(newverT, str(newverT+1)))
 
             print("Checking for server...")
             await ServerStatus(2)
@@ -214,13 +265,10 @@ async def KMSTcheck(down):
 
 @client.event
 async def jmscheck(down):
-    f = open("verJMS.txt", "r")
-    newver = int(f.readline())
-    print("Detected version: {}".format(newver))
-    f.close()
+    print("Detected version: {}".format(jmsver))
 
-    oldver = newver - 1
-    urlsd = "http://webdown2.nexon.co.jp/maple/patch/patchdir/00{}/00{}to00{}.patch".format(newver, oldver, newver)
+    oldver = jmsver - 1
+    urlsd = "http://webdown2.nexon.co.jp/maple/patch/patchdir/00{}/00{}to00{}.patch".format(jmsver, oldver, jmsver)
     print(urlsd)
     print("Start checking for JMS patch...")
     while 1:
@@ -233,10 +281,10 @@ async def jmscheck(down):
 
             if mdata > 1073741824:
                 size = round(float((((int(mdata)/1024)/1024)/1024)),2) # B -> KB -> MB -> GB
-                msg = "@everyone JMS ver.{} Patch is up!\n\nPatch Size is: {}GB\nDate uploaded: {}\nLink: {}".format(newver, size, datemod, urlsd)
+                msg = "@everyone JMS ver.{} Patch is up!\n\nPatch Size is: {}GB\nDate uploaded: {}\nLink: {}".format(jmsver, size, datemod, urlsd)
             else:
                 size = round(float((int(mdata)/1024)/1024),2) # B -> KB -> MB
-                msg = "@everyone JMS ver.{} Patch is up!\n\nPatch Size is: {}MB\nDate uploaded: {}\nLink: {}".format(newver, size, datemod, urlsd)
+                msg = "@everyone JMS ver.{} Patch is up!\n\nPatch Size is: {}MB\nDate uploaded: {}\nLink: {}".format(jmsver, size, datemod, urlsd)
             await client.get_channel(###Channel ID###).send(msg)
 
             if down == 1:
@@ -248,18 +296,14 @@ async def jmscheck(down):
                         break
                     else:
                         print("Directory JMS has been created")
-                filename = "./JMS/00{}to00{}.patch".format(oldver, newver)
+                filename = "./JMS/00{}to00{}.patch".format(oldver, jmsver)
                 print("Downloading...")
                 urllib.request.urlretrieve(urlsd, filename)
                 print("Download Complete. (saved to ./JMS folder)")
 
-            newver+=1
-            oldver+=1
-            x = open("verJMS.txt", "w")
-            x.write(str(newver) + "\n")
+            for line in fileinput.input('ver.txt', inplace=True):
+                print(line.rstrip().replace(jmsver, str(jmsver+1)))
             print("Write Complete, Killing bot")
-            x.close()
-
             return 0
         except(urllib.error.HTTPError):
             print("File doesn't exist")
@@ -275,24 +319,22 @@ async def jmscheck(down):
 
 @client.event
 async def updateVer():
-    global newver, prevsize, minorsize, oldver, newverT, oldverT
+    global newver, prevsize, minorsize, oldver, newverT, oldverT, jmsver
     f = open("ver.txt", "r")
     newver = int(f.readline())
     prevsize = float(f.readline())
     minorsize = float(f.readline())
+    newverT = int(f.readline())
+    jmsver = int(f.readline())
     f.close()
-    oldver = newver - 1
 
-    f = open("verT.txt", "r")
-    newverT = int(f.read())
-    f.close()
+    oldver = newver - 1
     oldverT = newverT - 1
     return 0
 
 @client.event
 async def ServerStatus(x):
     # 1 stands for live and 2 stands for test
-
     a = 0
     if x == 1:
         ip = 'IP ADDRESS' #Live Server IP
@@ -346,34 +388,47 @@ async def ServerStatus(x):
 
 @client.event
 async def on_ready():
+    global kms_choice, ze
     a = 0
     check = 0 #ServerStatus
     enable = 0 #Patch download
     while 1:
-        a = int(input("\nChoose from these:\n1. KMS check\n2. KMS minor check\n3. KMST check\n4. JMS check\n5. Enable Patch Download\n6. Skip Server Status check for KMS\n7. Quit\n\nChoice? : "))
+        a = int(input("\nChoose from these:\n1. KMS/KMS minor check\n2. KMST check\n3. JMS check\n4. Enable/Disable Patch Download\n5. Skip Server Status check for KMS\n6. Enable/Disable SOAP time check\n7. Quit\n\nChoice? : "))
         try:
             if a == 1:
-                await kmscheck(enable, check)
+                if ze == 1:
+                    await timecheck()
+                else:
+                    kms_choice = int(input("Which one do you want to check?:\n1. KMS\n2. KMS minor"))
+                if kms_choice == 1:
+                    await kmscheck(enable, check)
+                elif kmst_choice == 2:
+                     await kmsMcheck(enable, check)
             elif a == 2:
-                await kmsMcheck(enable, check)
-            elif a == 3:
                 await KMSTcheck(enable)
-            elif a == 4:
+            elif a == 3:
                 await jmscheck(enable)
-            elif a == 5:
+            elif a == 4:
                 if enable == 0:
                     enable = 1;
                     print("Patch download has been enabled")
                 else:
                     enable = 0;
                     print("Patch download has been disabled")
-            elif a == 6:
+            elif a == 5:
                 if check == 0:
                     check = 1;
                     print("OK, server status check will be skipped")
                 else:
                     check = 0;
                     print("OK, server status will be checked")
+            elif a == 6:
+                if ze == 1:
+                    ze = 0
+                    print("SOAP check has been disabled")
+                else:
+                    ze = 0
+                    print("SOAP check has been enabled")
             elif a == 7:
                 os._exit(0)
             await updateVer()
