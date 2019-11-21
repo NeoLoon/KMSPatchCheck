@@ -90,7 +90,7 @@ async def timecheck():
         elif hour < patch_h:
             print("You still have 1+ hour until patch")
             h = patch_h - hour
-            await asynic.sleep(3600*(h-1))
+            await asyncio.sleep(3600*(h-1))
             return 0
     except Exception as e:
         print(e)
