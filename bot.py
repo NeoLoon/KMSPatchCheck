@@ -399,10 +399,10 @@ async def on_ready():
                 if ze == 1:
                     await timecheck()
                 else:
-                    kms_choice = int(input("Which one do you want to check?:\n1. KMS\n2. KMS minor"))
+                    kms_choice = int(input("Which one do you want to check?:\n1. KMS\n2. KMS minor\n"))
                 if kms_choice == 1:
                     await kmscheck(enable, check)
-                elif kmst_choice == 2:
+                elif kms_choice == 2:
                      await kmsMcheck(enable, check)
             elif a == 2:
                 await KMSTcheck(enable)
