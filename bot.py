@@ -1,6 +1,6 @@
 ### Copyright (c) 2018 - 2019 Neo
 ### MIT License
-### Version 1.0.9 stable release
+### Version 1.0.10 stable release
 
 import os
 import socket
@@ -30,6 +30,7 @@ prevsize = float(f.readline())
 minorsize = float(f.readline())
 newverT = int(f.readline())
 jmsver = int(f.readline())
+patch_string = f.readline()
 f.close()
 oldver = newver - 1
 oldverT = newverT - 1
@@ -38,25 +39,30 @@ print("Version check \nOld: ", oldver , "\nNew: ", newver,"\n\nOld KMST: ", oldv
 
 @client.event
 async def timecheck():
-    global kms_choice, minorver
+    global kms_choice, minorver, patch_string
     client = zeep.Client('http://api.maplestory.nexon.com/soap/maplestory.asmx?WSDL') #Get WSDL
     info = client.service.GetInspectionInfo()._value_1._value_1[0]["InspectionInfo"]
     maintime = info.startDateTime #Get Time from patch
     detail = info.strObstacleContents #Get the name of the patch
+    patch_i = ""
 
     #GET PATCH INFO
-    if ("점검") in detail:
-        print("Not a patch, maintenance. Waiting for 12 hours")
-        await asyncio.sleep(43200) #need more information to handle this
-        await timecheck()
+    if ("긴급점검") in detail:
+        print("Emergency Maintenance")
+        patch_i = "Emergency Maintenance Schedule posted"
+    elif ("점검") in detail:
+        print("Not a patch, maintenance.")
+        patch_i = "New Maintenance Schedule"
     elif ("마이너") in detail:
         print("Minor patch will be checked")
         result = detail.find("마이너버전")
         y = detail[result+5: result+9]
         minorver = ''.join(x for x in y if x.isdigit())
+        patch_i = "New Minor Patch Schedule"
         kms_choice = 2
     elif ("클라이언트 패치") in detail:
         print("Client patch will be checked")
+        patch_i = "New Patch Schedule"
         kms_choice = 1
     else:
         print(detail)
@@ -72,6 +78,18 @@ async def timecheck():
     month = int(kst_time.strftime("%m")) #get current month
     day = int(kst_time.strftime("%d")) #get current day
     hour = int(kst_time.strftime("%H")) #get current hour
+    min = int(kst_time.strftime("%M")) #get current min
+
+    if patch_string != detail:
+        msg = ("{}\n\n{}".format(patch_i, patch_string)) #Will think of better msg next time
+        for line in fileinput.input('ver.txt', inplace=True):
+            print(line.rstrip().replace(patch_string, detail))
+        fileinput.close()
+        try:
+            await client.get_channel(###Channel ID###).send(msg)
+        except(AttirbuteError):
+            print("You are getting this error because you are using 0.16.x version of async, please update it to V.1.0+ to use this bot")
+            os._exit(1)
 
     sleep = 0
     try:
@@ -90,13 +108,19 @@ async def timecheck():
         elif hour < patch_h:
             print("You still have 1+ hour until patch")
             h = patch_h - hour
-            await asyncio.sleep(3600*(h-1))
+            await asyncio.sleep(3600*(h-1) + ((60 - min) * 60))
             return 0
+        elif hour == patch_h:
+            printf("Patch has started")
+            return 0
+        else:
+            print("You either already passed the date that was given by API or the game is having a maintenance, sleeping for 3 hours for new info")
+            await asyncio.sleep(10800) #need more information to handle this
+            await timecheck()
     except Exception as e:
         print(e)
 
-    print("You already passed the date that was given by API, skipping")
-    return 0 #server is up
+    return 0
 
 @client.event
 async def kmscheck(down, check):
@@ -151,6 +175,7 @@ async def kmscheck(down, check):
                 print(line.rstrip().replace(newver, str(newver+1)))
                 print(line.rstrip().replace(prevsize, str(size)))
                 print(line.rstrip().replace(minorsize, str(mdata)))
+            fileinput.close()
 
             print("Write Complete, Killing bot")
             return 0
@@ -181,7 +206,10 @@ async def kmsMcheck(down, check):
 
             datemod = check.info()['Last-Modified']
             size = round(float((int(mdata)/1024)/1024),2) # B -> KB -> MB
-            msg = "@everyone KMS ver 1.2.{}({}) Minor Patch is up!\n\nPatch Size is: {}MB\nLast MapleStory.exe size was: {}MB\n\nDate uploaded: {}".format(oldver, minorver, size, prevsize, datemod)
+            if minorver != 0:
+                msg = "@everyone KMS ver 1.2.{} Minor Patch is up!\n\nPatch Size is: {}MB\nLast MapleStory.exe size was: {}MB\n\nDate uploaded: {}".format(oldver,  size, prevsize, datemod)
+            else:
+                msg = "@everyone KMS ver 1.2.{}({}) Minor Patch is up!\n\nPatch Size is: {}MB\nLast MapleStory.exe size was: {}MB\n\nDate uploaded: {}".format(oldver, minorver, size, prevsize, datemod)
             try:
                 await client.get_channel(###Channel ID###).send(msg)
             except(AttirbuteError):
@@ -190,6 +218,7 @@ async def kmsMcheck(down, check):
 
             for line in fileinput.input('ver.txt', inplace=True):
                 print(line.rstrip().replace(minorsize, str(size)))
+            fileinput.close()
 
             if down == 1:
                 if os.path.isdir("./KMSM") == False:
@@ -246,6 +275,7 @@ async def KMSTcheck(down):
 
             for line in fileinput.input('ver.txt', inplace=True):
                 print(line.rstrip().replace(newverT, str(newverT+1)))
+            fileinput.close()
 
             print("Checking for server...")
             await ServerStatus(2)
@@ -303,6 +333,8 @@ async def jmscheck(down):
 
             for line in fileinput.input('ver.txt', inplace=True):
                 print(line.rstrip().replace(jmsver, str(jmsver+1)))
+            fileinput.close()
+
             print("Write Complete, Killing bot")
             return 0
         except(urllib.error.HTTPError):
@@ -432,7 +464,8 @@ async def on_ready():
             elif a == 7:
                 os._exit(0)
             await updateVer()
-        except:
+        except Exception as e:
+            print(e)
             os._exit(0)
 
 client.run(TOKEN)
