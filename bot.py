@@ -1,6 +1,6 @@
 ### Copyright (c) 2018 - 2019 Neo
 ### MIT License
-### Version 1.0.10 stable release
+### Version 1.0.11 stable release
 
 import os
 import socket
@@ -50,19 +50,22 @@ async def timecheck():
     if ("긴급점검") in detail:
         print("Emergency Maintenance")
         patch_i = "Emergency Maintenance Schedule posted"
+    elif ("임시점검") in detail:
+        print("Unscheduled Maintenance")
+        patch_i = "Unscheduled Maintenance Schedule posted"
     elif ("점검") in detail:
         print("Not a patch, maintenance.")
-        patch_i = "New Maintenance Schedule"
+        patch_i = "New Maintenance Schedule posted"
     elif ("마이너") in detail:
         print("Minor patch will be checked")
         result = detail.find("마이너버전")
         y = detail[result+5: result+9]
         minorver = ''.join(x for x in y if x.isdigit())
-        patch_i = "New Minor Patch Schedule"
+        patch_i = "New Minor Patch Schedule posted"
         kms_choice = 2
     elif ("클라이언트 패치") in detail:
         print("Client patch will be checked")
-        patch_i = "New Patch Schedule"
+        patch_i = "New Patch Schedule posted"
         kms_choice = 1
     else:
         print(detail)
@@ -114,8 +117,8 @@ async def timecheck():
             printf("Patch has started")
             return 0
         else:
-            print("You either already passed the date that was given by API or the game is having a maintenance, sleeping for 3 hours for new info")
-            await asyncio.sleep(10800) #need more information to handle this
+            print("You either already passed the date that was given by API or the game is having a maintenance, sleeping for 1 hour for new info")
+            await asyncio.sleep(3600) #need more information to handle this
             await timecheck()
     except Exception as e:
         print(e)
@@ -172,9 +175,9 @@ async def kmscheck(down, check):
                 size = round(float((int(mdata)/1024)/1024),2) # B -> KB -> MB
 
             for line in fileinput.input('ver.txt', inplace=True):
-                print(line.rstrip().replace(newver, str(newver+1)))
-                print(line.rstrip().replace(prevsize, str(size)))
-                print(line.rstrip().replace(minorsize, str(mdata)))
+                print(line.rstrip().replace(str(newver), str(newver+1)))
+                print(line.rstrip().replace(str(prevsize), str(size)))
+                print(line.rstrip().replace(str(minorsize), str(mdata)))
             fileinput.close()
 
             print("Write Complete, Killing bot")
@@ -216,10 +219,6 @@ async def kmsMcheck(down, check):
                 print("You are getting this error because you are using 0.16.x version of async, please update it to V.1.0+ to use this bot")
                 os._exit(1)
 
-            for line in fileinput.input('ver.txt', inplace=True):
-                print(line.rstrip().replace(minorsize, str(size)))
-            fileinput.close()
-
             if down == 1:
                 if os.path.isdir("./KMSM") == False:
                     try:
@@ -233,6 +232,11 @@ async def kmsMcheck(down, check):
                 print("Downloading...")
                 urllib.request.urlretrieve(urls, filename)
                 print("Download Complete. (saved to ./KMSM folder)")
+
+            for line in fileinput.input('ver.txt', inplace=True):
+                print(line.rstrip().replace(str(minorsize), str(size)))
+            fileinput.close()
+
             print("Write Complete, Killing bot")
             return 0
         await asyncio.sleep(120)
@@ -274,7 +278,7 @@ async def KMSTcheck(down):
                 print("Download Complete. (saved to ./KMST folder)")
 
             for line in fileinput.input('ver.txt', inplace=True):
-                print(line.rstrip().replace(newverT, str(newverT+1)))
+                print(line.rstrip().replace(str(newverT), str(newverT+1)))
             fileinput.close()
 
             print("Checking for server...")
@@ -332,7 +336,7 @@ async def jmscheck(down):
                 print("Download Complete. (saved to ./JMS folder)")
 
             for line in fileinput.input('ver.txt', inplace=True):
-                print(line.rstrip().replace(jmsver, str(jmsver+1)))
+                print(line.rstrip().replace(str(jmsver), str(jmsver+1)))
             fileinput.close()
 
             print("Write Complete, Killing bot")
