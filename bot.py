@@ -1,6 +1,6 @@
 ### Copyright (c) 2018 - 2019 Neo
 ### MIT License
-### Version 1.0.11 stable release
+### Version 1.0.12 stable release
 
 import os
 import socket
@@ -30,7 +30,7 @@ prevsize = float(f.readline())
 minorsize = float(f.readline())
 newverT = int(f.readline())
 jmsver = int(f.readline())
-patch_string = f.readline()
+patch_string = f.readline().strip()
 f.close()
 oldver = newver - 1
 oldverT = newverT - 1
@@ -86,7 +86,7 @@ async def timecheck():
     if patch_string != detail:
         msg = ("{}\n\n{}".format(patch_i, patch_string)) #Will think of better msg next time
         for line in fileinput.input('ver.txt', inplace=True):
-            print(line.rstrip().replace(patch_string, detail))
+            print(line.rstrip().replace(str(patch_string), str(detail)))
         fileinput.close()
         try:
             await client.get_channel(###Channel ID###).send(msg)
@@ -95,7 +95,7 @@ async def timecheck():
             os._exit(1)
 
     sleep = 0
-    try:
+try:
         if month < patch_m:
             print("Month is different")
             if month == 2:
@@ -104,13 +104,16 @@ async def timecheck():
                 sleep = ((30 - day) + patch_d - 1) * 86400 #31 and 30 fix is coming later
             await asyncio.sleep(sleep)
             await timecheck()
-        elif (day < patch_d) and ((hour - patch_h) > 0):
+        elif (day < patch_d) and ((patch_h - hour) > 0):
             print("Day is different")
             await asyncio.sleep(86400)
             await timecheck()
-        elif hour < patch_h:
-            print("You still have 1+ hour until patch")
-            h = patch_h - hour
+        elif (hour < patch_h) or (day < patch_d):
+            if (patch_h - hour) < 0:
+                h = 24 - hour + patch_h
+            else:
+                h = patch_h + hour
+            print("You still have {} hour(s) until patch".format(h))
             await asyncio.sleep(3600*(h-1) + ((60 - min) * 60))
             return 0
         elif hour == patch_h:
