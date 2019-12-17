@@ -40,8 +40,8 @@ print("Version check \nOld: ", oldver , "\nNew: ", newver,"\n\nOld KMST: ", oldv
 @client.event
 async def timecheck():
     global kms_choice, minorver, patch_string
-    client = zeep.Client('http://api.maplestory.nexon.com/soap/maplestory.asmx?WSDL') #Get WSDL
-    info = client.service.GetInspectionInfo()._value_1._value_1[0]["InspectionInfo"]
+    client_zeep = zeep.Client('http://api.maplestory.nexon.com/soap/maplestory.asmx?WSDL') #Get WSDL
+    info = client_zeep.service.GetInspectionInfo()._value_1._value_1[0]["InspectionInfo"]
     maintime = info.startDateTime #Get Time from patch
     detail = info.strObstacleContents #Get the name of the patch
     patch_i = ""
