@@ -1,6 +1,6 @@
 ### Copyright (c) 2018 - 2019 Neo
 ### MIT License
-### Version 1.0.12-2 release
+### Version 1.0.12-3 release
 
 import os
 import socket
@@ -177,10 +177,15 @@ async def kmscheck(down, check):
             else:
                 size = round(float((int(mdata)/1024)/1024),2) # B -> KB -> MB
 
-            for line in fileinput.input('ver.txt', inplace=True):
-                print(line.rstrip().replace(str(newver), str(newver+1)))
-                print(line.rstrip().replace(str(prevsize), str(size)))
-                print(line.rstrip().replace(str(minorsize), str(mdata)))
+            for line in fileinput.input('ver.txt', inplace=True): # temp solution
+                if (fileinput.filelineno() == 1):
+                    print(line.rstrip().replace(str(newver), str(newver+1)))
+                elif(fileinput.filelineno() == 2):
+                    print(line.rstrip().replace(str(prevsize), str(size)))
+                elif(fileinput.filelineno() == 3):
+                    print(line.rstrip().replace(str(minorsize), str(mdata)))
+                else:
+                    print(line.rstrip())
             fileinput.close()
 
             print("Write Complete, Killing bot")
@@ -365,6 +370,7 @@ async def updateVer():
     minorsize = float(f.readline())
     newverT = int(f.readline())
     jmsver = int(f.readline())
+    patch_string = f.readline().strip()
     f.close()
 
     oldver = newver - 1
