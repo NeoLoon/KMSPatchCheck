@@ -1,6 +1,6 @@
 ### Copyright (c) 2018 - 2019 Neo
 ### MIT License
-### Version 1.0.12 stable release
+### Version 1.0.12-2 release
 
 import os
 import socket
@@ -104,7 +104,7 @@ try:
                 sleep = ((30 - day) + patch_d - 1) * 86400 #31 and 30 fix is coming later
             await asyncio.sleep(sleep)
             await timecheck()
-        elif (day < patch_d) and ((patch_h - hour) > 0):
+        elif ((patch_d - day) > 1) and ((patch_h - hour) > 0):
             print("Day is different")
             await asyncio.sleep(86400)
             await timecheck()
@@ -112,7 +112,7 @@ try:
             if (patch_h - hour) < 0:
                 h = 24 - hour + patch_h
             else:
-                h = patch_h + hour
+                h = patch_h - hour
             print("You still have {} hour(s) until patch".format(h))
             await asyncio.sleep(3600*(h-1) + ((60 - min) * 60))
             return 0
