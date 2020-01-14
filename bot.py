@@ -1,6 +1,6 @@
 ### Copyright (c) 2018 - 2019 Neo
 ### MIT License
-### Version 1.0.13 stable release
+### Version 1.0.13-2 stable release
 
 import os
 import socket
@@ -100,8 +100,8 @@ async def timecheck():
                 sleep = ((30 - day) + patch_d - 1) * 86400 #31 and 30 fix is coming later
             await asyncio.sleep(sleep)
             await timecheck()
-        elif ((patch_d - day) > 1) and ((patch_h - hour) > 0):
-            print("Day is different")
+        elif ((patch_d - day) > 1) or ((patch_d - day) > 0) and ((patch_h - hour) > 0) and (kms_choice == 0):
+            print("Day is different, waiting for a day")
             await asyncio.sleep(86400)
             await timecheck()
         elif (hour < patch_h) or (day < patch_d):
