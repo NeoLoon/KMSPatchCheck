@@ -1,6 +1,6 @@
-### Copyright (c) 2018 - 2019 Neo
+### Copyright (c) 2018 - 2020 Neo
 ### MIT License
-### Version 1.0.13-2 stable release
+### Version 1.0.14 stable release
 
 import os
 import socket
@@ -17,7 +17,7 @@ except:
     ze = 0 #doesn't exist
     print("Either zeep, pytz or datetime is not installed, KMS check will run with a traditional method.")
 
-TOKEN = '###DISCORD ID###'
+TOKEN = 'token'
 
 client = discord.Client()
 kms_choice = 0
@@ -45,19 +45,19 @@ async def timecheck():
     #GET PATCH INFO
     if ("긴급점검") in detail:
         print("Emergency Maintenance")
-        patch_i = "Emergency Maintenance Schedule"
+        patch_i = "Emergency Maintenance Schedule posted"
     elif ("임시점검") in detail:
         print("Unscheduled Maintenance")
-        patch_i = "Unscheduled Maintenance Schedule"
+        patch_i = "Unscheduled Maintenance Schedule posted"
     elif ("점검") in detail:
         print("Not a patch, maintenance.")
-        patch_i = "New Maintenance Schedule"
+        patch_i = "New Maintenance Schedule posted"
     elif ("마이너") in detail:
-        print("Minor patch will be checked")
-        patch_i = "New Minor Patch Schedule"
+        print("Minor patch schedule, skipping")
+        patch_i = "New Minor Patch Schedule posted"
     elif ("클라이언트 패치") in detail:
         print("Client patch will be checked")
-        patch_i = "New Patch Schedule"
+        patch_i = "New Patch Schedule posted"
         kms_choice = 1
     else:
         print(detail)
@@ -80,12 +80,12 @@ async def timecheck():
     min = int(kst_time.strftime("%M")) #get current min
 
     if patch_string != detail:
-        msg = ("{}\n\n{}\nPatch/Maintenance is expected to start at {}:{} KST.\nPatch/Maintenance will be done around {}:{} KST.".format(patch_i, detail, patch_h, patch_min, end_patch_d, end_patch_min)) #Will think of better msg next time
+        msg = ("{}\n\n{}\nPatch is expected to start at {}:{}0 KST.\nPatch will be done around {}:{}0 KST.".format(patch_i, detail, patch_h, patch_min, end_patch_h, end_patch_min)) #Will think of better msg next time
         for line in fileinput.input('ver.txt', inplace=True):
             print(line.rstrip().replace(str(patch_string), str(detail)))
         fileinput.close()
         try:
-            await client.get_channel(###Channel ID###).send(msg)
+            await client.get_channel(###CHANNEL ID ###).send(msg)
         except Exception as e:
             print("You are getting this error because you are using 0.16.x version of async, please update it to V.1.0+ to use this bot")
             os._exit(1)
@@ -153,7 +153,7 @@ async def kmscheck(down, check):
             else:
                 size = round(float((int(mdata)/1024)/1024),2) # B -> KB -> MB
                 msg = "@everyone KMS ver 1.2.{} Patch is up!\n\nPatch Size is: {}MB\nDate uploaded: {}\nLink: {}".format(newver, size, datemod, urlsd)
-            await client.get_channel(###Channel ID###).send(msg)
+            await client.get_channel(###CHANNEL ID ###).send(msg)
 
             if down == 1:
                 if os.path.isdir("./KMS") == False:
@@ -207,7 +207,7 @@ async def KMSTcheck(down):
             else:
                 size = round(float((int(mdata)/1024)/1024),2) # B -> KB -> MB
                 msg = "@everyone KMST ver 1.2.0{} Patch is up!\n\nPatch Size is: {}MB\nDate uploaded: {}\nLink: {}".format(int(newverT-1000),size, datemod, urls)
-            await client.get_channel(###Channel ID###).send(msg)
+            await client.get_channel(###CHANNEL ID ###).send(msg)
 
             if down == 1:
                 if os.path.isdir("./KMST") == False:
@@ -223,7 +223,7 @@ async def KMSTcheck(down):
                 urllib.request.urlretrieve(urls, filename)
                 print("Download Complete. (saved to ./KMST folder)")
 
-            for line in fileinput.input('ver.txt', inplace=True):
+            for line in fileinput.FileInput('ver.txt', inplace=1):
                 print(line.rstrip().replace(str(newverT), str(newverT+1)))
             fileinput.close()
 
@@ -258,15 +258,11 @@ async def updateVer():
 
 @client.event
 async def ServerStatus(x):
-    # DOES NOT WORK FOR GLOBAL SERVER
     # 1 stands for live and 2 stands for test
     if x == 1:
-        ip = 'IP ADDRESS' #Live Server IP
+        ip = 'IP' #Live Server IP
     elif x == 2:
-        ip = 'IP ADDRESS' #Test Server IP
-    if ('IP ADDRESS') in ip:
-        print("Please fix your IP address in script")
-        return 0
+        ip = 'IP' #Test Server IP
     port = PORT #Server Port
 
     try:
@@ -291,7 +287,7 @@ async def ServerStatus(x):
                 if x != 1:
                     msg = "Test server is up"
                     try:
-                        await client.get_channel(###Channel ID###).send(msg)
+                        await client.get_channel(###CHANNEL ID ###).send(msg)
                         return 0
                     except(AttributeError):
                         print("You are getting this error because you are using 0.16.x version of async, please update it to V.1.0+ to use this bot")
@@ -303,7 +299,7 @@ async def ServerStatus(x):
         ping.close()
         msg = "Live server is down, starting patch check"
         try:
-            await client.get_channel(###Channel ID###).send(msg)
+            await client.get_channel(###CHANNEL ID ###).send(msg)
             return 0
         except(AttributeError):
             print("You are getting this error because you are using 0.16.x version of async, please update it to V.1.0+ to use this bot")
@@ -323,8 +319,7 @@ async def on_ready():
         try:
             if a == 1:
                 if ze == 1:
-                    while kms_choice == 0:
-                        await timecheck()
+                    await timecheck()
                     check = 1
                 await kmscheck(enable, check)
             elif a == 2:
