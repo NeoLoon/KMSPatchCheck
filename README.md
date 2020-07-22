@@ -3,7 +3,7 @@ A Discord bot that can check KMS/KMST patches (For KMS Minor/JMS patch, use 1.0.
 # Dependencies
 - async version 1.0+, zeep (required from version 1.0.9)
 - Python 3.5.3+ is needed(as the discord.py requires 3.5.3+).
-- Discord.py is needed for running this with discord.
+- Discord.py 1.3.4+ is needed for running this script.
 - This should theoretically work with all OSs.
 # Running
 First, you have to put your discord bot's token into a script file(can be found in discord site).

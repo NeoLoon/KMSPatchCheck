@@ -1,6 +1,6 @@
 ### Copyright (c) 2018 - 2020 Neo
 ### MIT License
-### Version 1.0.14 stable release
+### Version 1.0.15 stable release
 
 import os
 import socket
@@ -21,6 +21,7 @@ TOKEN = 'token'
 
 client = discord.Client()
 kms_choice = 0
+a = 0
 
 f = open("ver.txt", "r")
 newver = int(f.readline())
@@ -80,7 +81,11 @@ async def timecheck():
     min = int(kst_time.strftime("%M")) #get current min
 
     if patch_string != detail:
-        msg = ("{}\n\n{}\nPatch is expected to start at {}:{}0 KST.\nPatch will be done around {}:{}0 KST.".format(patch_i, detail, patch_h, patch_min, end_patch_h, end_patch_min)) #Will think of better msg next time
+        if patch_min == 0:
+            patch_min = "00"
+        if end_patch_min == 0:
+            end_patch_min = "00"
+        msg = ("{}\n\n{}\nPatch is expected to start at {}:{} KST.\nPatch will be done around {}:{} KST.".format(patch_i, detail, patch_h, patch_min, end_patch_h, end_patch_min)) #Will think of better msg next time
         for line in fileinput.input('ver.txt', inplace=True):
             print(line.rstrip().replace(str(patch_string), str(detail)))
         fileinput.close()
@@ -117,7 +122,7 @@ async def timecheck():
                 await asyncio.sleep(3600)
                 await timecheck()
         elif hour == patch_h:
-            printf("Patch has started")
+            print("Patch has started")
             if kms_choice == 1:
                 return 0
             else:
@@ -201,12 +206,13 @@ async def KMSTcheck(down):
             mdata = int(check.info()['Content-Length']) #get metadata
 
             datemod = check.info()['Last-Modified']
+
             if mdata > 1073741824:
                 size = round(float((((int(mdata)/1024)/1024)/1024)),2) # B -> KB -> MB -> GB
-                msg = "@everyone KMST ver 1.2.0{} Patch is up!\n\nPatch Size is: {}GB\nDate uploaded: {}\nLink: {}".format(int(newverT-1000),size, datemod, urls)
+                msg = "@everyone KMST ver 1.2.{} Patch is up!\n\nPatch Size is: {}GB\nDate uploaded: {}\nLink: {}".format(int(newverT-1000),size, datemod, urls)
             else:
                 size = round(float((int(mdata)/1024)/1024),2) # B -> KB -> MB
-                msg = "@everyone KMST ver 1.2.0{} Patch is up!\n\nPatch Size is: {}MB\nDate uploaded: {}\nLink: {}".format(int(newverT-1000),size, datemod, urls)
+                msg = "@everyone KMST ver 1.2.{} Patch is up!\n\nPatch Size is: {}MB\nDate uploaded: {}\nLink: {}".format(int(newverT-1000),size, datemod, urls)
             await client.get_channel(###CHANNEL ID ###).send(msg)
 
             if down == 1:
@@ -310,7 +316,10 @@ async def ServerStatus(x):
 
 @client.event
 async def on_ready():
-    global kms_choice, ze
+    global kms_choice, ze, a
+    # This is lead the function to fail and return to where it's supposed to go. This will be replaced once a new solution is found
+    if a != 1:
+        await KMSTcheck(enable)
     a = 0
     check = 0 #ServerStatus
     enable = 0 #Patch download
@@ -347,6 +356,7 @@ async def on_ready():
                     print("SOAP check has been enabled")
             elif a == 6:
                 os._exit(0)
+            a = 0
             await updateVer()
         except Exception as e:
             print(e)
